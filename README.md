@@ -1,2 +1,4 @@
 # something-something-opal
-Am I saving money yet?
+
+1. `pip3 install tornado`
+2. profit
