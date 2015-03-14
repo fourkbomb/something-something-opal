@@ -1,2 +1,4 @@
 *.sw[po]
 stops.txt
+
+frontend/lib/*

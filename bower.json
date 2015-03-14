@@ -1,0 +1,22 @@
+{
+  "name": "something-something-opal",
+  "version": "0.0.1",
+  "homepage": "https://github.com/keepcalm444/something-something-opal",
+  "authors": [
+    "Harrison <harrison@theshoebridges.com>"
+  ],
+  "description": "Is opal *worth* it?",
+  "main": "index.html",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "skeleton": "~2.0.4"
+  }
+}

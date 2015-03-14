@@ -5,4 +5,5 @@
 2. download full gtfs data from tdx.transportnsw.info
 3. extract stops.txt and put in db folder
 4. run dump.sh
-5. profit
+5. `bower install`
+6. profit
