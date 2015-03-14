@@ -3,7 +3,9 @@ import tornado.ioloop
 import tornado.web
 import argparse
 
-app = tornado.web.Application()
+app = tornado.web.Application([
+    (r"/(.*)", tornado.web.StaticFileHandler, {'path': 'static'})    
+])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
