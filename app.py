@@ -13,12 +13,12 @@ app= tornado.web.Application([
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--port', help="which port for the server", type=int)
+    parser.add_argument('-p', '--port', type=int, default=8080,
+                        help='port to listen on')
     args = parser.parse_args()
-    
-    port = args.port or 8080
-    print("Starting server on :{}".format(port))
-    app.listen(port)
+
+    print("Starting server on :{}".format(args.port))
+    app.listen(args.port)
     tornado.ioloop.IOLoop.instance().start()
 
 # vim: set ts=4 et
