@@ -10,7 +10,6 @@ class IndexHandler(tornado.web.RequestHandler):
 
 app = tornado.web.Application([
     (r'/', IndexHandler),
-    (r"/(.*)", tornado.web.StaticFileHandler, {'path': 'static'})
 ])
 
 if __name__ == "__main__":
