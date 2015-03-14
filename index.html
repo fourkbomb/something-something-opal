@@ -4,19 +4,26 @@
 		<title>something-something-opal</title>
 		<link rel="stylesheet" href="/static/lib/skeleton/css/normalize.css">
 		<link rel="stylesheet" href="/static/lib/skeleton/css/skeleton.css">
-		<link rel="stylesheet" href="/static/css/index.css"
+		<link rel="stylesheet" href="/static/css/index.css">
+		<script src="/static/lib/zepto/zepto.min.js"></script>
+		<script src="/static/lib/velocity/velocity.min.js"></script>
 	</head>
 
 	<body>
 		<div class="container" style="text-align: center">
-			<h1>something-something-opal?</h1>
-			<p>Blahblahblah pick a card type</p>
-			<button class="button-primary big u-full-width" id="btn-card-adult">Adult</button>
-			<button class="button-primary big u-full-width" id="btn-card-concession">Child/Student</button>
-			<button class="button-primary big u-full-width" id="btn-card-pensioner">Pensioner/Senior</button>
-			<hr />
-			<h1>Next page!</h1>
+			<div class="page onscreen" id="screen-initial">
+				<h1>something-something-opal?</h1>
+				<p>Blahblahblah pick a card type</p>
+				<button class="button-primary big u-full-width btn-mode-select" id="btn-card-adult">Adult</button>
+				<button class="button-primary big u-full-width btn-mode-select" id="btn-card-concession">Child/Student</button>
+				<button class="button-primary big u-full-width btn-mode-select" id="btn-card-pensioner">Pensioner/Senior</button>
+			</div>
+			<div class="page" id="screen-pick-journey">
+				<h1>Next page!</h1>
+				<div id="pick-journey" style="height:100%">div</div>
+			</div>
 		</div>
+		<button id="btn-back" class="button-primary">Back</button>
 		<script src="/static/js/main.js"></script>
 	</body>
 </html>
