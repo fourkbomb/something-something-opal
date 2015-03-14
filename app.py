@@ -3,8 +3,13 @@ import tornado.ioloop
 import tornado.web
 import argparse
 
+class IndexHandler(tornado.web.RequestHandler):
+    def get(self):
+        with open('index.html') as f:
+            self.write(f.read())
+
 app = tornado.web.Application([
-    (r"/(.*)", tornado.web.StaticFileHandler, {'path': 'static'})    
+    (r'/', IndexHandler),
 ])
 
 if __name__ == "__main__":
