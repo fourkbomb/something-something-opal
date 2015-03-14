@@ -3,12 +3,16 @@ import tornado.ioloop
 import tornado.web
 import argparse
 
-class MainHandler(tornado.web.RequestHandler):
+class IndexHandler(tornado.web.RequestHandler):
     def get(self):
-        self.write("Hello, World!")
+        f = open('frontend/index.html', 'r')
+        self.write(f.read())
+        f.close()
 
-app= tornado.web.Application([
-    (r"/", MainHandler)
+app = tornado.web.Application([
+    (r"/", IndexHandler),
+    (r"/js/(.*)", tornado.web.StaticFileHandler, {'path': 'frontend/js'}),
+    (r"/lib/(.*)", tornado.web.StaticFileHandler, {'path': 'frontend/lib'})
 ])
 
 if __name__ == "__main__":
