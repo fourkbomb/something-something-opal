@@ -5,7 +5,7 @@ createdb $DBNAME 2>/dev/null
 echo Done
 
 echo Initialising tables
-psql $DBNAME -c "CREATE TABLE stops (id text, name text, lat decimal, long decimal, parent_station text, wheelchair_boarding numeric, platform_code text)" 2>/dev/null
+psql $DBNAME -c "CREATE TABLE stops (id text PRIMARY KEY, name text, lat decimal, long decimal, parent_station text, wheelchair_boarding numeric, platform_code text)" 2>/dev/null
 echo Done
 
 echo Dumping CSV file
