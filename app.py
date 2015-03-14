@@ -5,7 +5,7 @@ import argparse
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
-        with open('index.html') as f:
+        with open('static/index.html') as f:
             self.write(f.read())
 
 app = tornado.web.Application([
