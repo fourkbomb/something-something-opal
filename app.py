@@ -15,7 +15,7 @@ class StopsQueryHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def get(self, path):
         # TODO apparently PGSQL has a "citext" data type which will remove the necessity of all the lower()s
-        self.application.db.execute("SELECT id,name FROM stops WHERE position('"+ path.replace("'", "''").lower() +"' in lower(name)) <> 0 LIMIT 25", callback=self._done)
+        self.application.db.execute("SELECT id,name FROM stops WHERE position('"+ path.replace("'", "''").lower() +"' in lower(name)) <> 0 ORDER BY name LIMIT 10", callback=self._done)
 
     def _done(self, cursor, error):
         fixed = {}

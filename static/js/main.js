@@ -11,6 +11,17 @@ function modeChosen(ev) {
 	scrollTo('pick-journey');
 }
 
+// pick journey mode
+var completer;
+var currentStopsCache;
+function updateCompleter(txt) {
+	$.getJSON('/api/stops/' + encodeURIComponent(txt), function(data) {
+		currentStopsCache = data;
+		console.log(data);
+		completer.options = Object.keys(data);
+		completer.repaint();
+	});
+}
 
 // navigation
 var currentlyVisible = '#screen-initial';
@@ -26,7 +37,6 @@ function scrollTo(id) {
 	$(currentlyVisible).velocity('slideUp');
 	$(selector).velocity('slideDown');
 	
-	
 	currentlyVisible = '#screen-'+id;
 }
 
@@ -35,17 +45,18 @@ function back() {
 	scrollTo(order[current-1]);
 }
 
-function testScroll() {
-	$("html").velocity("scroll", { offset: "750px", mobileHA: false });
-}
-
 // misc DOM functions
 function domReady() {
 	if (document.readyState !== 'complete') return;
 
 	$('.btn-mode-select').on('click', modeChosen);
 	$('#btn-back').on('click', back);
-	//$(document).on('hashChange', hashChange);
+
+	completer = completely(document.getElementById('input-stop'));
+	completer.startFrom = 0
+	completer.input.style.border = '1px solid #D1D1D1';
+	updateCompleter('');
+	completer.onChange = updateCompleter;
 	console.log('Done');
 }
 
