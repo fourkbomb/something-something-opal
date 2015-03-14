@@ -10,7 +10,7 @@ class IndexHandler(tornado.web.RequestHandler):
 
 app = tornado.web.Application([
     (r'/', IndexHandler),
-])
+], static_path='static')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
