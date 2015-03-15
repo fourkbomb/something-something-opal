@@ -10,25 +10,35 @@ class IndexHandler(tornado.web.RequestHandler):
     def get(self):
         with open('index.html') as f:
             self.write(f.read())
+
 # TODO move this stuff into individual files
 class ListStopsHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def get(self, path):
         # TODO apparently PGSQL has a "citext" data type which will remove the necessity of all the lower()s
-        if path.startswith('id/'):
-            path = path[3:]
-            self.application.db.execute("SELECT * FROM stops WHERE id = \'" + path.replace("\'", "\'\'").lower() + "\' LIMIT 1", callback=self._done_id)
-        else:
-            self.application.db.execute("SELECT id,name FROM stops WHERE position(\'"+ path.replace("\'", "\'\'").lower() +"\' in lower(name)) <> 0 ORDER BY name LIMIT 10", callback=self._done)
+        self.application.db.execute("SELECT id, name FROM stops WHERE position(%s in lower(name)) <> 0 ORDER BY name LIMIT 10",
+                                    (path,), callback=self._done)
 
     def _done(self, cursor, error):
         fixed = {}
-        for i in cursor.fetchall():
+        for i in cursor:
             fixed[i[1]] = i[0]
         self.write(fixed)
         self.finish()
-    def _done_id(self, cursor, error):
-        res = cursor.fetchall()[0]
+
+class GetStopHandler(tornado.web.RequestHandler):
+    @tornado.web.asynchronous
+    def get(self, path):
+        self.application.db.execute("SELECT * FROM stops WHERE id = %s LIMIT 1",
+                                    (path,), callback=self._done)
+
+    def _done(self, cursor, error):
+        res = cursor.fetchone()
+        if not res:
+            self.set_status(404)
+            self.write({})
+            self.finish()
+
         # order is id name lat long parent_station wheelchair_boarding platform_code
         self.write({
             'id': res[0],
@@ -43,6 +53,7 @@ class ListStopsHandler(tornado.web.RequestHandler):
 
 app = tornado.web.Application([
     (r'/', IndexHandler),
+    (r'/api/stops/id/(.*)', GetStopHandler),
     (r'/api/stops/(.*)', ListStopsHandler)
 ], static_path='static')
 
