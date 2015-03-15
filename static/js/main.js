@@ -9,6 +9,7 @@ function modeChosen(ev) {
 	mode = ev.target.id.split('-')[2];
 	//window.location.hash = '#pick-journey';
 	scrollTo('pick-journey');
+
 }
 
 // pick journey mode
@@ -17,10 +18,18 @@ var currentStopsCache;
 function updateCompleter(txt) {
 	$.getJSON('/api/stops/' + encodeURIComponent(txt), function(data) {
 		currentStopsCache = data;
-		console.log(data);
+		//console.log(data);
 		completer.options = Object.keys(data);
 		completer.repaint();
 	});
+}
+
+function onCompleterEnter() {
+	completer.hideDropDown();
+	$.getJSON('/api/stops/id/' + encodeURIComponent(currentStopsCache[completer.getText()]), function(data) {
+		$('#selected-stop-info').html('<ul><li>id: ' + data.id + '</li><li>name: ' + data.name + '</li></ul>');
+	});
+	console.log('return');
 }
 
 // navigation
@@ -57,7 +66,7 @@ function domReady() {
 	completer.input.style.border = '1px solid #D1D1D1';
 	updateCompleter('');
 	completer.onChange = updateCompleter;
-	console.log('Done');
+	completer.onEnter = onCompleterEnter;
 }
 
 document.addEventListener('readystatechange', domReady);

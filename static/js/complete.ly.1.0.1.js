@@ -135,15 +135,13 @@ function completely(container, config) {
                     elem.appendChild(divRow);
                 }
                 if (rows.length===0) {
-                    //console.log('nothing to show');
                     return; // nothing to show.
                 }
-                if (rows.length===1 && token === rows[0].__hint) {
-                    //console.log('only one element, hint already displayed');
+                /*if (rows.length===1 && token === rows[0].__hint) {
                     return; // do not show the dropDown if it has only one element which matches what we have just displayed.
                 }
                 
-                if (rows.length<2) return; 
+                if (rows.length<2) return; */
                 p.highlight(0);
                 
                 if (distanceToTop > distanceToBottom*3) {        // Heuristic (only when the distance to the to top is 4 times more than distance to the bottom
@@ -169,7 +167,7 @@ function completely(container, config) {
                 if (ix+step === -1 || ix+step === rows.length) return '';// rows[ix].__hint; // NO CIRCULAR SCROLLING. 
                 ix+=step; 
                 p.highlight(ix);
-                return '';//rows[ix].__hint;//txtShadow.value = uRows[uIndex].__hint ;
+                return rows[ix].__hint;//txtShadow.value = uRows[uIndex].__hint ;
             },
             onmouseselection : function() {} // it will be overwritten. 
         };
@@ -252,7 +250,6 @@ function completely(container, config) {
             // breaking text in leftSide and token.
             var token = text.substring(startFrom);
             leftSide =  text.substring(0,startFrom);
-            console.log('options: ' + options);
             // updating the hint. 
             txtHint.value ='';
             /*for (var i=0;i<optionsLength;i++) {
@@ -356,22 +353,23 @@ function completely(container, config) {
             } else {
                 var wasDropDownHidden = (dropDown.style.visibility == 'hidden');
                 dropDownController.hide();
-                
+                txtInput.value = txtHint.value;
                 if (wasDropDownHidden) {
-                    txtHint.value = txtInput.value; // ensure that no hint is left.
+                    //txtHint.value = txtInput.value; // ensure that no hint is left.
                     txtInput.focus();
                     rs.onEnter();    
                     return; 
                 }
                 
-                txtInput.value = txtHint.value;
+                
                 var hasTextChanged = registerOnTextChangeOldValue != txtInput.value
                 registerOnTextChangeOldValue = txtInput.value; // <-- to avoid dropDown to appear again. 
                                                           // for example imagine the array contains the following words: bee, beef, beetroot
                                                           // user has hit enter to get 'bee' it would be prompted with the dropDown again (as beef and beetroot also match)
-                if (hasTextChanged) {
-                    rs.onChange(txtInput.value); // <-- forcing it.
-                }
+                /*if (hasTextChanged) {
+                    //rs.onChange(txtInput.value); // <-- forcing it.
+                }*/
+                rs.onEnter();
                 
             }
             return; 
