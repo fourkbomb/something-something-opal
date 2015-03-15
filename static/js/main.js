@@ -27,7 +27,8 @@ function updateCompleter(txt) {
 function onCompleterEnter() {
 	completer.hideDropDown();
 	$.getJSON('/api/stops/id/' + encodeURIComponent(currentStopsCache[completer.getText()]), function(data) {
-		$('#selected-stop-info').html('<ul><li>id: ' + data.id + '</li><li>name: ' + data.name + '</li></ul>');
+		//$('#selected-stop-info').html('<ul><li>id: ' + data.id + '</li><li>name: ' + data.name + '</li></ul>');
+		dropMapPin(data.name, new google.maps.LatLng(Number(data.lat), Number(data.long)));
 	});
 	console.log('return');
 }
@@ -44,7 +45,11 @@ function scrollTo(id) {
 		currentlyVisible += ',#btn-back';
 	}
 	$(currentlyVisible).velocity('slideUp');
-	$(selector).velocity('slideDown');
+	$(selector).velocity('slideDown', {
+		complete: function() {
+			resizeMap(); // weird stuff happens otherwise
+		}
+	});
 	
 	currentlyVisible = '#screen-'+id;
 }
@@ -54,12 +59,45 @@ function back() {
 	scrollTo(order[current-1]);
 }
 
+// google maps
+function initialiseMap() {
+	window.map = new google.maps.Map(document.getElementById('map-canvas'));
+	map.setZoom(12);
+	resizeMap();
+	map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+}
+
+function resizeMap() {
+	if (!window.google) return;
+	google.maps.event.trigger(window.map, 'resize');
+	map.setCenter(new google.maps.LatLng(-33.87601919093802, 151.218299));	
+}
+
+function dropMapPin(name, latLng) {
+	var marker = new google.maps.Marker({
+		position: latLng,
+		map: map,
+		title: name,
+		animation: google.maps.Animation.DROP
+	});
+}
+
 // misc DOM functions
 function domReady() {
 	if (document.readyState !== 'complete') return;
 
 	$('.btn-mode-select').on('click', modeChosen);
 	$('#btn-back').on('click', back);
+
+	// load the google API key
+	$.getJSON('/api/key', function(obj) {
+		var script = document.createElement('script');
+		script.type = 'text/javascript';
+		script.src = '//maps.googleapis.com/maps/api/js?callback=initialiseMap&key=' + obj.key;
+		document.body.appendChild(script);
+		console.log('[loaded maps api]');
+
+	})
 
 	completer = completely(document.getElementById('input-stop'));
 	completer.startFrom = 0

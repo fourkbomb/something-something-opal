@@ -23,7 +23,7 @@ class ListStopsHandler(tornado.web.RequestHandler):
         # TODO apparently PGSQL has a "citext" data type which will remove the
         # necessity of all the lower()s
         self.application.db.execute("SELECT id, name FROM stops WHERE position(%s in lower(name)) <> 0 ORDER BY name LIMIT 10",
-                                    (path,), callback=self._done)
+                                    (path.lower(),), callback=self._done)
 
     def _done(self, cursor, error):
         fixed = {}
@@ -60,23 +60,39 @@ class GetStopHandler(tornado.web.RequestHandler):
         })
         self.finish()
 
+# I'm sure there's a better way to do this
+class KeyHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write({'key': config['google_api_key']})
+
 app = tornado.web.Application([
     (r'/', IndexHandler),
     (r'/api/stops/id/(.*)', GetStopHandler),
-    (r'/api/stops/(.*)', ListStopsHandler)
+    (r'/api/stops/(.*)', ListStopsHandler),
+    (r'/api/key', KeyHandler)
 ], static_path='static')
 
-app.db = momoko.Pool(
-    dsn='dbname=gtfs user=someone password=top_secret host=localhost port=5432',
-    size=1
-)
+
+config = {}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--port', type=int, default=8080,
                         help='port to listen on')
+    parser.add_argument('-c', '--config', type=str, default='config.json',
+                        help='location of config file')
     args = parser.parse_args()
 
+    try:
+        with open(args.config) as f:
+            config = json.load(f)
+    except:
+        raise Exception("Failed to load config file.")
+
+    app.db = momoko.Pool(
+        dsn='dbname=gtfs user={} password={} host={} port={}'.format(config['db_user'], config['db_pass'], config['db_host'], config['db_port']),
+        size=1
+    )
     print("Starting server on :{}".format(args.port))
     app.listen(args.port)
     tornado.ioloop.IOLoop.instance().start()

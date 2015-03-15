@@ -369,6 +369,7 @@ function completely(container, config) {
                 /*if (hasTextChanged) {
                     //rs.onChange(txtInput.value); // <-- forcing it.
                 }*/
+                
                 rs.onEnter();
                 
             }

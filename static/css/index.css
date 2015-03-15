@@ -20,3 +20,10 @@ button.big {
 	margin-left: 10px;
 	display: none;
 }
+
+#map-canvas {
+	/* TODO this is broken on iOS 7 apparently
+	 * https://gist.github.com/pburtchaell/e702f441ba9b3f76f587
+	 */
+	min-height: 75vh;
+}
