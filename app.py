@@ -6,16 +6,22 @@ import psycopg2
 import momoko
 import json
 
+
 class IndexHandler(tornado.web.RequestHandler):
+
     def get(self):
         with open('index.html') as f:
             self.write(f.read())
 
 # TODO move this stuff into individual files
+
+
 class ListStopsHandler(tornado.web.RequestHandler):
+
     @tornado.web.asynchronous
     def get(self, path):
-        # TODO apparently PGSQL has a "citext" data type which will remove the necessity of all the lower()s
+        # TODO apparently PGSQL has a "citext" data type which will remove the
+        # necessity of all the lower()s
         self.application.db.execute("SELECT id, name FROM stops WHERE position(%s in lower(name)) <> 0 ORDER BY name LIMIT 10",
                                     (path,), callback=self._done)
 
@@ -26,7 +32,9 @@ class ListStopsHandler(tornado.web.RequestHandler):
         self.write(fixed)
         self.finish()
 
+
 class GetStopHandler(tornado.web.RequestHandler):
+
     @tornado.web.asynchronous
     def get(self, path):
         self.application.db.execute("SELECT * FROM stops WHERE id = %s LIMIT 1",
@@ -39,7 +47,8 @@ class GetStopHandler(tornado.web.RequestHandler):
             self.write({})
             self.finish()
 
-        # order is id name lat long parent_station wheelchair_boarding platform_code
+        # order is id name lat long parent_station wheelchair_boarding
+        # platform_code
         self.write({
             'id': res[0],
             'name': res[1],
