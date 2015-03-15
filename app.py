@@ -69,7 +69,7 @@ app = tornado.web.Application([
     (r'/', IndexHandler),
     (r'/api/stops/id/(.*)', GetStopHandler),
     (r'/api/stops/(.*)', ListStopsHandler),
-    (r'/api/key', KeyHandler)
+    (r'/api/key', KeyHandler),
 ], static_path='static')
 
 
