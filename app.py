@@ -20,7 +20,7 @@ class ListStopsHandler(tornado.web.RequestHandler):
         # TODO apparently PGSQL has a "citext" data type which will remove the
         # necessity of all the lower()s
         self.application.db.execute(
-            "SELECT id, name FROM stops WHERE position(%s in lower(name)) <> 0"
+            "SELECT name, id FROM stops WHERE position(%s in lower(name)) <> 0"
             " ORDER BY name LIMIT 10",
             (path.lower(),), callback=self._done
         )
@@ -85,10 +85,10 @@ if __name__ == "__main__":
             config = json.load(f)
     except:  # TODO: Specify exception to save from suciding self in future?
         raise Exception("Failed to load config file.")
-
+    #print('{test}'.format({'test': 'hello world'}))
     app.db = momoko.Pool(
-        dsn=('dbname=gtfs user={user} password={pass} host={host} port={port}'
-             ).format(config),
+        dsn=('dbname=gtfs user={} password={} host={} port={}'
+             ).format(config['db_user'], config['db_pass'], config['db_host'], config['db_port']),
         size=1
     )
     print("Starting server on :{}".format(args.port))

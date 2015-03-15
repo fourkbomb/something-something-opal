@@ -15,6 +15,8 @@ function modeChosen(ev) {
 // pick journey mode
 var completer;
 var currentStopsCache;
+var stopFrom;
+var stopTo;
 function updateCompleter(txt) {
 	$.getJSON('/api/stops/' + encodeURIComponent(txt), function(data) {
 		currentStopsCache = data;
@@ -28,6 +30,13 @@ function onCompleterEnter() {
 	completer.hideDropDown();
 	$.getJSON('/api/stops/id/' + encodeURIComponent(currentStopsCache[completer.getText()]), function(data) {
 		//$('#selected-stop-info').html('<ul><li>id: ' + data.id + '</li><li>name: ' + data.name + '</li></ul>');
+		if (stopFrom) {
+			stopTo = data;
+			drawLine(stopFrom, stopTo);
+			stopFrom = stopTo;
+		} else {
+			stopFrom = data;
+		}
 		dropMapPin(data.name, new google.maps.LatLng(Number(data.lat), Number(data.long)));
 	});
 	console.log('return');
@@ -60,6 +69,7 @@ function back() {
 }
 
 // google maps
+var pins = [];
 function initialiseMap() {
 	window.map = new google.maps.Map(document.getElementById('map-canvas'));
 	map.setZoom(12);
@@ -80,6 +90,25 @@ function dropMapPin(name, latLng) {
 		title: name,
 		animation: google.maps.Animation.DROP
 	});
+	pins.push(marker);
+}
+
+function drawLine(from, to) {
+	//dropMapPin(from.name, {lat: from.lat, long: from.long});
+	//dropMapPin(to.name, {lat: to.lat, long: to.long});
+	from.lat = Number(from.lat);
+	from.lng = Number(from.long);
+	to.lng = Number(to.long);
+	to.lat = Number(to.lat);
+	var path = new google.maps.Polyline({
+		path: [from, to],
+		geodesic: true,
+		strokeColor: '#FF0000',
+		strokeOpacity: 1.0,
+		strokeWeight: 2
+	});
+	path.setMap(map);
+	pins.push(path);
 }
 
 // misc DOM functions
