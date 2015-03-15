@@ -8,22 +8,22 @@ import json
 
 
 class IndexHandler(tornado.web.RequestHandler):
-
     def get(self):
         with open('index.html') as f:
             self.write(f.read())
 
+
 # TODO move this stuff into individual files
-
-
 class ListStopsHandler(tornado.web.RequestHandler):
-
     @tornado.web.asynchronous
     def get(self, path):
         # TODO apparently PGSQL has a "citext" data type which will remove the
         # necessity of all the lower()s
-        self.application.db.execute("SELECT id, name FROM stops WHERE position(%s in lower(name)) <> 0 ORDER BY name LIMIT 10",
-                                    (path.lower(),), callback=self._done)
+        self.application.db.execute(
+            "SELECT id, name FROM stops WHERE position(%s in lower(name)) <> 0"
+            " ORDER BY name LIMIT 10",
+            (path.lower(),), callback=self._done
+        )
 
     def _done(self, cursor, error):
         fixed = {}
@@ -34,7 +34,6 @@ class ListStopsHandler(tornado.web.RequestHandler):
 
 
 class GetStopHandler(tornado.web.RequestHandler):
-
     @tornado.web.asynchronous
     def get(self, path):
         self.application.db.execute("SELECT * FROM stops WHERE id = %s LIMIT 1",
@@ -46,6 +45,7 @@ class GetStopHandler(tornado.web.RequestHandler):
             self.set_status(404)
             self.write({})
             self.finish()
+            return
 
         # order is id name lat long parent_station wheelchair_boarding
         # platform_code
@@ -59,6 +59,7 @@ class GetStopHandler(tornado.web.RequestHandler):
             'platform': res[6]
         })
         self.finish()
+
 
 # I'm sure there's a better way to do this
 class KeyHandler(tornado.web.RequestHandler):
@@ -90,7 +91,7 @@ if __name__ == "__main__":
         raise Exception("Failed to load config file.")
 
     app.db = momoko.Pool(
-        dsn='dbname=gtfs user={} password={} host={} port={}'.format(config['db_user'], config['db_pass'], config['db_host'], config['db_port']),
+        dsn='dbname=gtfs user={db_user} password={db_pass} host={db_host} port={db_port}'.format(config),
         size=1
     )
     print("Starting server on :{}".format(args.port))
