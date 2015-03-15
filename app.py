@@ -26,9 +26,7 @@ class ListStopsHandler(tornado.web.RequestHandler):
         )
 
     def _done(self, cursor, error):
-        fixed = {}
-        for i in cursor:
-            fixed[i[1]] = i[0]
+        fixed = dict(cursor)
         self.write(fixed)
         self.finish()
 
@@ -41,23 +39,21 @@ class GetStopHandler(tornado.web.RequestHandler):
 
     def _done(self, cursor, error):
         res = cursor.fetchone()
-        if not res:
+        if res:
+            # order is id, name, lat, long, parent_station, wheelchair_boarding
+            # platform_code
+            self.write({
+                'id': res[0],
+                'name': res[1],
+                'lat': str(res[2]),
+                'long': str(res[3]),
+                'parent': res[4],
+                'wheelchair': int(res[5]),
+                'platform': res[6]
+            })
+        else:
             self.set_status(404)
             self.write({})
-            self.finish()
-            return
-
-        # order is id name lat long parent_station wheelchair_boarding
-        # platform_code
-        self.write({
-            'id': res[0],
-            'name': res[1],
-            'lat': str(res[2]),
-            'long': str(res[3]),
-            'parent': res[4],
-            'wheelchair': int(res[5]),
-            'platform': res[6]
-        })
         self.finish()
 
 
@@ -87,11 +83,12 @@ if __name__ == "__main__":
     try:
         with open(args.config) as f:
             config = json.load(f)
-    except:
+    except:  # TODO: Specify exception to save from suciding self in future?
         raise Exception("Failed to load config file.")
 
     app.db = momoko.Pool(
-        dsn='dbname=gtfs user={db_user} password={db_pass} host={db_host} port={db_port}'.format(config),
+        dsn=('dbname=gtfs user={user} password={pass} host={host} port={port}'
+             ).format(config),
         size=1
     )
     print("Starting server on :{}".format(args.port))
