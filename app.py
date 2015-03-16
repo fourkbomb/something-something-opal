@@ -62,15 +62,13 @@ class KeyHandler(tornado.web.RequestHandler):
     def get(self):
         self.write({'key': config['google_api_key']})
 
+
 app = tornado.web.Application([
     (r'/', IndexHandler),
     (r'/api/stops/id/(.*)', GetStopHandler),
     (r'/api/stops/(.*)', ListStopsHandler),
     (r'/api/key', KeyHandler),
 ], static_path='static')
-
-
-config = {}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -86,7 +84,6 @@ if __name__ == "__main__":
     except:  # TODO: Specify exception to save from suciding self in future?
         raise Exception("Failed to load config file.")
 
-    #print('{test}'.format({'test': 'hello world'}))
     app.db = momoko.Pool(
         dsn=('dbname=gtfs user={db_user} password={db_pass} host={db_host} port={db_port}'
              ).format_map(config),
