@@ -85,10 +85,11 @@ if __name__ == "__main__":
             config = json.load(f)
     except:  # TODO: Specify exception to save from suciding self in future?
         raise Exception("Failed to load config file.")
+
     #print('{test}'.format({'test': 'hello world'}))
     app.db = momoko.Pool(
-        dsn=('dbname=gtfs user={} password={} host={} port={}'
-             ).format(config['db_user'], config['db_pass'], config['db_host'], config['db_port']),
+        dsn=('dbname=gtfs user={db_user} password={db_pass} host={db_host} port={db_port}'
+             ).format_map(config),
         size=1
     )
     print("Starting server on :{}".format(args.port))
