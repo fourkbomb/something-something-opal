@@ -30,7 +30,7 @@ function onCompleterEnter() {
 	completer.hideDropDown();
 	$.getJSON('/api/stops/id/' + encodeURIComponent(currentStopsCache[completer.getText()]), function(data) {
 		//$('#selected-stop-info').html('<ul><li>id: ' + data.id + '</li><li>name: ' + data.name + '</li></ul>');
-		if (stopFrom) {
+		if (pins.length > 0) {
 			stopTo = data;
 			drawLine(stopFrom, stopTo);
 			stopFrom = stopTo;
@@ -70,11 +70,29 @@ function back() {
 
 // google maps
 var pins = [];
+var lines = [];
 function initialiseMap() {
 	window.map = new google.maps.Map(document.getElementById('map-canvas'));
 	map.setZoom(12);
 	resizeMap();
 	map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+	// magic functions! source: http://stackoverflow.com/a/5239323
+	google.maps.LatLng.prototype.kmTo = function(a){ 
+	    var e = Math, ra = e.PI/180; 
+	    var b = this.lat() * ra, c = a.lat() * ra, d = b - c; 
+	    var g = this.lng() * ra - a.lng() * ra; 
+	    var f = 2 * e.asin(e.sqrt(e.pow(e.sin(d/2), 2) + e.cos(b) * e.cos 
+	    (c) * e.pow(e.sin(g/2), 2))); 
+	    return f * 6378.137; 
+	}
+
+	google.maps.Polyline.prototype.inKm = function(n){ 
+	    var a = this.getPath(n), len = a.getLength(), dist = 0; 
+	    for (var i=0; i < len-1; i++) { 
+	       dist += a.getAt(i).kmTo(a.getAt(i+1)); 
+	    }
+	    return dist;
+	}
 }
 
 function resizeMap() {
@@ -93,6 +111,13 @@ function dropMapPin(name, latLng) {
 	pins.push(marker);
 }
 
+function undo() {
+	var lastMarker = pins.pop();
+	var lastLine = lines.pop();
+	lastLine.setMap(null);
+	lastMarker.setMap(null);
+}
+
 function drawLine(from, to) {
 	//dropMapPin(from.name, {lat: from.lat, long: from.long});
 	//dropMapPin(to.name, {lat: to.lat, long: to.long});
@@ -108,8 +133,87 @@ function drawLine(from, to) {
 		strokeWeight: 2
 	});
 	path.setMap(map);
-	pins.push(path);
+	lines.push(path);
+	calculateFare(from, to, path);
+	//$('#lines-distance').html($('#lines-distance').html() + from.name + ' - ' + to.name + ': ' + path.inKm(path).toFixed(2) + 'km<br />');
 }
+
+// fare calculation
+var currentTotalFare = 0.0;
+var constituentFares = [];
+var totalDistance = 0.0;
+
+var fares = {
+	'bus': {
+		3: 2.1,
+		8: 3.5,
+		default: 4.5
+	},
+	'ferry': {
+		9: 5.74,
+		default: 7.18
+	}
+};
+
+function calculateFare(from, to, path) {
+	if (from.type !== to.type) {
+		console.error(from.type + ' !== ' + to.type + '! refusing to calculate fare!');
+		//return;
+	}
+	if (from.type === 'train') {
+		console.error('TODO: train ticketing');
+	//	return;
+	}
+	var distance = path.inKm(path); // TODO trips within an hour of each other count as 1
+	var sectionFare = 0;
+	if (from.type !== 'bus' && from.type !== 'ferry') from.type = 'nocalculate';
+	if (from.type == to.type) {
+		sectionFare = fares[from.type].default;
+		if (distance == 0) {
+			sectionFare = 0.0;
+		} else {
+			var keys = Object.keys(fares[from.type]);
+			delete keys[keys.indexOf('default')];
+			var i;
+			var best = 256;
+			for (i = 0; i < keys.length; i++) {
+				var key = keys[i];
+				if (key < best && distance < key) {
+					best = key;
+				}
+			}
+			if (best !== 256) {
+				sectionFare = fares[from.type][best];
+			}
+			if (mode !== 'adult') sectionFare /= 2;
+			//sectionFare = sectionFare.toFixed(2);
+		}
+		totalDistance += distance;
+		currentTotalFare += sectionFare;
+		constituentFares.push(sectionFare);
+		sectionFare = sectionFare.toFixed(2);
+	} else {
+		sectionFare = '--';
+	}
+	/*if (distance < 3) {
+		sectionFare = fares.bus[3];
+	} else if (distance < 8) {
+		sectionFare = fares.bus[8];
+	} else {
+		sectionFare = fares.bus.default;
+	}*/
+	var newEntry = document.createElement('tr');
+	newEntry.innerHTML = '<td>' + from.name + '</td><td>' + to.name + '</td><td> ' + path.inKm(path).toFixed(2) + 'km</td><td>$' + sectionFare + '</td>';
+	$('#fare-total').before('<tr>' + newEntry.innerHTML + '</tr>');
+	//document.getElementById('lines-distance').appendChild(newEntry);
+	updateTotal();
+}
+
+function updateTotal() {
+	$('#distance-total').text(totalDistance.toFixed(2) + 'km');
+	$('#cost-total').text('$' + currentTotalFare.toFixed(2));
+}
+
 
 // misc DOM functions
 function domReady() {

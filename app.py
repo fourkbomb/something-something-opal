@@ -42,7 +42,7 @@ class GetStopHandler(tornado.web.RequestHandler):
         if res:
             # order is id, name, lat, long, parent_station, wheelchair_boarding
             # platform_code
-            self.write({
+            response = {
                 'id': res[0],
                 'name': res[1],
                 'lat': str(res[2]),
@@ -50,7 +50,15 @@ class GetStopHandler(tornado.web.RequestHandler):
                 'parent': res[4],
                 'wheelchair': int(res[5]),
                 'platform': res[6]
-            })
+            }
+            stopId = response['id']
+            if stopId.startswith('CR_') or stopId.startswith('PST'):
+                response['type'] = 'train'
+            elif len(stopId) == 5:
+                response['type'] = 'ferry'
+            else:
+                response['type'] = 'bus' # bus + light rail are the same.
+            self.write(response)
         else:
             self.set_status(404)
             self.write({})

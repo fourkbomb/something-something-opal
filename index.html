@@ -24,11 +24,21 @@
 			<div class="page" id="screen-pick-journey" style="text-align: left">
 				<table id="table-current-trips"></table>
 				<div class="row">
-					<div class="six columns">
+					<div class="four columns">
 						<label>
 							<span class="label-body">Pick a stop</span>
 							<div id="input-stop"></div>
 						</label>
+					</div>
+					<div class="eight columns">
+						<table>
+							<thead>
+								<tr><th>From</th><th>To</th><th>Distance</th><th>Cost</th></tr>
+							</thead>
+							<tbody id="lines-distance">
+							<tr id="fare-total"><td><strong>Total</strong></td><td></td><td id="distance-total">0km</td><td id="cost-total">$0.00</td></tr>
+							</tbody>
+						</table>
 					</div>
 				</div>
 				<div class="u-full-width" id="map-canvas">
