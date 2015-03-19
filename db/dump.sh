@@ -12,9 +12,9 @@ echo Dumping CSV file
 #cat stops.txt | awk -F dump_stops.awk | pgsql gtfs
 #psql gtfs -c  \
 SED="s/'\"/'/g"
-TOTAL=`cat stops.txt | wc -l`
+TOTAL=`wc -l < stops.txt`
 COMPLETED=0
-DATA=`cat stops.txt | sed 's/ /\\\@/g'`
+DATA=`sed 's/ /\\\@/g' stops.txt`
 for i in $DATA; do
 	statement="`echo $i | sed 's/\\\@/ /g' | awk -f dump_stops.awk`"
 	psql gtfs -c "$statement" >/dev/null
