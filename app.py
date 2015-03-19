@@ -6,6 +6,7 @@ import psycopg2
 import momoko
 import json
 
+from distance_matrix import DistanceMatrix
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
@@ -64,6 +65,29 @@ class GetStopHandler(tornado.web.RequestHandler):
             self.write({})
         self.finish()
 
+# TODO move this into a generic "OpalCostHandler"
+# Factor in other ticket types, only doing adult, peak atm.
+# This is more of a proof of concept...
+class OpalTrainCostHandler(tornado.web.RequestHandler):
+    def get(self):
+        from_station = self.get_argument('from_station')
+        to_station = self.get_argument('to_station')
+        
+        dm = DistanceMatrix(config['google_api_key'])
+        distance = dm.distance(from_station, to_station) / 1000
+        cost = 8.30
+
+        if distance <= 10:
+            cost = 3.38
+        elif distance <= 20:
+            cost = 4.20
+        elif distance <= 35:
+            cost = 4.82
+        elif distance <= 65:
+            cost = 6.46
+
+        self.write({'cost': cost})
+
 
 # I'm sure there's a better way to do this
 class KeyHandler(tornado.web.RequestHandler):
@@ -76,6 +100,7 @@ app = tornado.web.Application([
     (r'/api/stops/id/(.*)', GetStopHandler),
     (r'/api/stops/(.*)', ListStopsHandler),
     (r'/api/key', KeyHandler),
+    (r'/api/cost/opal/train', OpalTrainCostHandler)
 ], static_path='static')
 
 if __name__ == "__main__":
