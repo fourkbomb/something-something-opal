@@ -4,5 +4,6 @@
 	"db_pass": "top_secret",
 	"db_port": "5432",
 
-	"google_api_key": "wouldnt_you_like_to_know"
+	"google_browser_api_key": "wouldnt_you_like_to_know",
+	"google_server_api_key": "woudlnt_you_like_to_know_v2"
 }

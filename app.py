@@ -65,6 +65,7 @@ class GetStopHandler(tornado.web.RequestHandler):
             self.write({})
         self.finish()
 
+
 # TODO move this into a generic "OpalCostHandler"
 # Factor in other ticket types, only doing adult, peak atm.
 # This is more of a proof of concept...
@@ -73,10 +74,10 @@ class OpalTrainCostHandler(tornado.web.RequestHandler):
         from_station = self.get_argument('from_station')
         to_station = self.get_argument('to_station')
         
-        dm = DistanceMatrix(config['google_api_key'])
+        dm = DistanceMatrix(config['google_server_api_key'])
         distance = dm.distance(from_station, to_station) / 1000
-        cost = 8.30
 
+        cost = 8.30
         if distance <= 10:
             cost = 3.38
         elif distance <= 20:
@@ -92,7 +93,7 @@ class OpalTrainCostHandler(tornado.web.RequestHandler):
 # I'm sure there's a better way to do this
 class KeyHandler(tornado.web.RequestHandler):
     def get(self):
-        self.write({'key': config['google_api_key']})
+        self.write({'key': config['google_browser_api_key']})
 
 
 app = tornado.web.Application([
