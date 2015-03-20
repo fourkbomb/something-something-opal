@@ -2,3 +2,4 @@
 stops.txt
 config.json
 static/lib/*
+db/*.txt

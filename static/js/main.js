@@ -30,7 +30,7 @@ function onCompleterEnter() {
 	completer.hideDropDown();
 	$.getJSON('/api/stops/id/' + encodeURIComponent(currentStopsCache[completer.getText()]), function(data) {
 		//$('#selected-stop-info').html('<ul><li>id: ' + data.id + '</li><li>name: ' + data.name + '</li></ul>');
-		if (pins.length > 0) {
+		if (pins.length > 0 && stopFrom) {
 			stopTo = data;
 			drawLine(stopFrom, stopTo);
 			stopFrom = stopTo;
@@ -101,6 +101,15 @@ function resizeMap() {
 	map.setCenter(new google.maps.LatLng(-33.87601919093802, 151.218299));	
 }
 
+function dropMapPinBoring(latLng) {
+	var marker = new google.maps.Marker({
+		position: latLng,
+		map: map,
+		title: latLng.lat + ',' + latLng.lng
+	});
+	pins.push(marker);	
+}
+
 function dropMapPin(name, latLng) {
 	var marker = new google.maps.Marker({
 		position: latLng,
@@ -138,6 +147,36 @@ function drawLine(from, to) {
 	//$('#lines-distance').html($('#lines-distance').html() + from.name + ' - ' + to.name + ': ' + path.inKm(path).toFixed(2) + 'km<br />');
 }
 
+function getTestData() {
+	$.getJSON('/static/data.json', function(data) {
+		window.allStops = data;
+		console.log('loaded ' + data.length + ' stops');
+	});
+}
+
+function showShape(shpID) {
+	$.getJSON('/api/shape/' + encodeURIComponent(shpID), function(data) {
+		console.log('loaded');
+		data.data = data.data.map(function (e) {
+			return {lat: Number(e[0]), lng: Number(e[1])};
+		});
+		window.shapeData = data.data;
+		drawPoly(data.data);
+		data.data.forEach(dropMapPinBoring);
+	});
+}
+
+function drawPoly(pts) {
+	var path = new google.maps.Polyline({
+		path: pts,
+		geodesic: true,
+		strokeColor: '#FF0000',
+		strokeOpacity: 1.0,
+		strokeWeight: 2
+	});
+	path.setMap(map);
+}
+
 // fare calculation
 var currentTotalFare = 0.0;
 var constituentFares = [];
@@ -152,21 +191,18 @@ var fares = {
 	'ferry': {
 		9: 5.74,
 		default: 7.18
+	},
+	'train': {
+		10: 3.38,
+		20: 4.20,
+		35: 4.82,
+		65: 6.46,
+		default: 8.3
 	}
 };
 
-function calculateFare(from, to, path) {
-	if (from.type !== to.type) {
-		console.error(from.type + ' !== ' + to.type + '! refusing to calculate fare!');
-		//return;
-	}
-	if (from.type === 'train') {
-		console.error('TODO: train ticketing');
-	//	return;
-	}
-	var distance = path.inKm(path); // TODO trips within an hour of each other count as 1
+function calculateFinalFare(from, to, distance) {
 	var sectionFare = 0;
-	if (from.type !== 'bus' && from.type !== 'ferry') from.type = 'nocalculate';
 	if (from.type == to.type) {
 		sectionFare = fares[from.type].default;
 		if (distance == 0) {
@@ -195,23 +231,36 @@ function calculateFare(from, to, path) {
 	} else {
 		sectionFare = '--';
 	}
-	/*if (distance < 3) {
-		sectionFare = fares.bus[3];
-	} else if (distance < 8) {
-		sectionFare = fares.bus[8];
-	} else {
-		sectionFare = fares.bus.default;
-	}*/
 	var newEntry = document.createElement('tr');
-	newEntry.innerHTML = '<td>' + from.name + '</td><td>' + to.name + '</td><td> ' + path.inKm(path).toFixed(2) + 'km</td><td>$' + sectionFare + '</td>';
+	newEntry.innerHTML = '<td>' + from.name + '</td><td>' + to.name + '</td><td> ' + distance.toFixed(2) + 'km</td><td>$' + sectionFare + '</td>';
 	$('#fare-total').before('<tr>' + newEntry.innerHTML + '</tr>');
-	//document.getElementById('lines-distance').appendChild(newEntry);
 	updateTotal();
+}
+
+function calculateFare(from, to, path) {
+	if (from.type === 'train' && to.type === 'train') {
+		//console.error('TODO: train ticketing');
+		getTrainDistance(from, to);
+		return;
+	}
+	var distance = path.inKm(path); // TODO trips within an hour of each other count as 1
+	calculateFinalFare(from, to, distance);
+	
 }
 
 function updateTotal() {
 	$('#distance-total').text(totalDistance.toFixed(2) + 'km');
 	$('#cost-total').text('$' + currentTotalFare.toFixed(2));
+}
+
+function getTrainDistance(from, to) {
+	if (!from.id.startsWith('CR_') || !to.id.startsWith('CR_')) {
+		console.error('Not a train trip: ' + from.id + ' -> ' + to.id);
+		return;
+	}
+	$.getJSON('/api/distance/train/' + from.id + '/' + to.id, function(data) {
+		calculateFinalFare(from, to, data.dist/1000);
+	});
 }
 
 

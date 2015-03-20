@@ -6,7 +6,7 @@ import psycopg2
 import momoko
 import json
 
-from distance_matrix import DistanceMatrix
+#from distance_matrix import DistanceMatrix
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
@@ -31,6 +31,16 @@ class ListStopsHandler(tornado.web.RequestHandler):
         self.write(fixed)
         self.finish()
 
+class GetShapeHandler(tornado.web.RequestHandler):
+    @tornado.web.asynchronous
+    def get(self, path):
+        self.application.db.execute("SELECT lat,lng FROM shapes WHERE id = %s",
+            (path,), callback=self._done)
+
+    def _done(self, cursor, error):
+        #self.set_header('Content-Type', 'application/json')
+        self.write({'data': list(cursor)})
+        self.finish()
 
 class GetStopHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
@@ -65,29 +75,35 @@ class GetStopHandler(tornado.web.RequestHandler):
             self.write({})
         self.finish()
 
+class TrainDistanceHandler(tornado.web.RequestHandler):
+    @tornado.web.asynchronous
+    def get(self, path):
+        path = path.split('/')
+        self.stops = path
+        self.application.db.execute("SELECT id FROM stop_times WHERE stop in (%s, %s) GROUP BY id HAVING COUNT(distinct stop) = 2 LIMIT 1",
+                                    (path[0], path[1]), callback=self._gotID)
+    def _gotID(self, cursor, error):
+        if cursor == None:
+            self.write({})
+            self.finish()
+            return
+        if not self.stops:
+            raise Exception("y u no be legit")
+        res = cursor.fetchone()
+        stopTimesID = res[0]
+        self.application.db.execute("SELECT distance_travelled FROM stop_times WHERE id = %s AND stop in (%s, %s)",
+                                (stopTimesID, self.stops[0], self.stops[1]), callback=self._finish)
+        print("Got id " + stopTimesID)
 
-# TODO move this into a generic "OpalCostHandler"
-# Factor in other ticket types, only doing adult, peak atm.
-# This is more of a proof of concept...
-class OpalTrainCostHandler(tornado.web.RequestHandler):
-    def get(self):
-        from_station = self.get_argument('from_station')
-        to_station = self.get_argument('to_station')
-        
-        dm = DistanceMatrix(config['google_server_api_key'])
-        distance = dm.distance(from_station, to_station) / 1000
-
-        cost = 8.30
-        if distance <= 10:
-            cost = 3.38
-        elif distance <= 20:
-            cost = 4.20
-        elif distance <= 35:
-            cost = 4.82
-        elif distance <= 65:
-            cost = 6.46
-
-        self.write({'cost': cost})
+    def _finish(self, cursor, error):
+        if cursor == None or cursor.rowcount == None or cursor.rowcount <= 1:
+            self.write({})
+            self.finish()
+        d1 = cursor.fetchone()[0]
+        d2 = cursor.fetchone()[0]
+        dist = abs(float(d1) - float(d2))
+        self.write({'dist': dist})
+        self.finish()
 
 
 # I'm sure there's a better way to do this
@@ -98,10 +114,12 @@ class KeyHandler(tornado.web.RequestHandler):
 
 app = tornado.web.Application([
     (r'/', IndexHandler),
+    (r'/api/distance/train/(.*)', TrainDistanceHandler),
     (r'/api/stops/id/(.*)', GetStopHandler),
     (r'/api/stops/(.*)', ListStopsHandler),
     (r'/api/key', KeyHandler),
-    (r'/api/cost/opal/train', OpalTrainCostHandler)
+    (r'/api/cost/opal/train', OpalTrainCostHandler),
+    (r'/api/shape/(.*)', GetShapeHandler),
 ], static_path='static')
 
 if __name__ == "__main__":
