@@ -80,7 +80,8 @@ class TrainDistanceHandler(tornado.web.RequestHandler):
     def get(self, path):
         path = path.split('/')
         self.stops = path
-        self.application.db.execute("SELECT id FROM stop_times WHERE stop in (%s, %s) GROUP BY id HAVING COUNT(distinct stop) = 2 LIMIT 1",
+        print("Go get " + path)
+        self.application.db.execute("SELECT id FROM stop_times WHERE name in (%s, %s) GROUP BY id HAVING COUNT(distinct name) = 2 LIMIT 1",
                                     (path[0], path[1]), callback=self._gotID)
     def _gotID(self, cursor, error):
         if cursor == None:
@@ -90,10 +91,14 @@ class TrainDistanceHandler(tornado.web.RequestHandler):
         if not self.stops:
             raise Exception("y u no be legit")
         res = cursor.fetchone()
+        if res == None:
+            self.write({})
+            self.finish()
+            return
         stopTimesID = res[0]
-        self.application.db.execute("SELECT distance_travelled FROM stop_times WHERE id = %s AND stop in (%s, %s)",
+        self.application.db.execute("SELECT distance_travelled FROM stop_times WHERE id = %s AND name in (%s, %s)",
                                 (stopTimesID, self.stops[0], self.stops[1]), callback=self._finish)
-        print("Got id " + stopTimesID)
+        #print("Got id " + stopTimesID)
 
     def _finish(self, cursor, error):
         if cursor == None or cursor.rowcount == None or cursor.rowcount <= 1:
@@ -118,7 +123,7 @@ app = tornado.web.Application([
     (r'/api/stops/id/(.*)', GetStopHandler),
     (r'/api/stops/(.*)', ListStopsHandler),
     (r'/api/key', KeyHandler),
-    (r'/api/cost/opal/train', OpalTrainCostHandler),
+    #(r'/api/cost/opal/train', OpalTrainCostHandler),
     (r'/api/shape/(.*)', GetShapeHandler),
 ], static_path='static')
 

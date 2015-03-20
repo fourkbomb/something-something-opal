@@ -201,7 +201,7 @@ var fares = {
 	}
 };
 
-function calculateFinalFare(from, to, distance) {
+function calculateFinalFare(from, to, rowID, distance) {
 	var sectionFare = 0;
 	if (from.type == to.type) {
 		sectionFare = fares[from.type].default;
@@ -231,21 +231,31 @@ function calculateFinalFare(from, to, distance) {
 	} else {
 		sectionFare = '--';
 	}
-	var newEntry = document.createElement('tr');
+	var newEntry = document.getElementById(rowID);
 	newEntry.innerHTML = '<td>' + from.name + '</td><td>' + to.name + '</td><td> ' + distance.toFixed(2) + 'km</td><td>$' + sectionFare + '</td>';
-	$('#fare-total').before('<tr>' + newEntry.innerHTML + '</tr>');
+	//$('#fare-total').before('<tr>' + newEntry.innerHTML + '</tr>');
 	updateTotal();
 }
 
 function calculateFare(from, to, path) {
+	var rowID = displayLoadingRow(from, to);
 	if (from.type === 'train' && to.type === 'train') {
-		//console.error('TODO: train ticketing');
-		getTrainDistance(from, to);
+		//console.error('TODO: train ticketing')
+		getTrainDistance(from, to, rowID);
 		return;
 	}
 	var distance = path.inKm(path); // TODO trips within an hour of each other count as 1
-	calculateFinalFare(from, to, distance);
+	calculateFinalFare(from, to, rowID, distance);
 	
+}
+
+function displayLoadingRow(from, to) {
+	var newEntry = document.createElement('tr');
+	var id = from.id + '_' + to.id + '_' + Math.floor(Math.random()*10);
+	newEntry.innerHTML = '<td>' + from.name + '</td><td>' + to.name + '</td><td> --km</td><td>$--</td>';
+	newEntry.id = id;
+	$('#fare-total').before(newEntry);//'<tr id="">' + newEntry.innerHTML + '</tr>');
+	return id;
 }
 
 function updateTotal() {
@@ -253,13 +263,23 @@ function updateTotal() {
 	$('#cost-total').text('$' + currentTotalFare.toFixed(2));
 }
 
-function getTrainDistance(from, to) {
-	if (!from.id.startsWith('CR_') || !to.id.startsWith('CR_')) {
+function getTrainDistance(from, to, rowID) {
+	if ((!from.id.startsWith('CR_') && !from.id.startsWith('PST')) || (!to.id.startsWith('CR_') && !to.id.startsWith('PST'))) {
 		console.error('Not a train trip: ' + from.id + ' -> ' + to.id);
 		return;
 	}
-	$.getJSON('/api/distance/train/' + from.id + '/' + to.id, function(data) {
-		calculateFinalFare(from, to, data.dist/1000);
+	var f = from.id;
+	var t = to.id;
+	if (f.startsWith('CR_')) {
+		f = from.parent;
+		from.name = from.name.split(' Platform')[0];
+	}
+	if (t.startsWith('CR_')) {
+		t = to.parent;
+		to.name = to.name.split(' Platform')[0];
+	}
+	$.getJSON('/api/distance/train/' + f + '/' + t, function(data) {
+		calculateFinalFare(from, to, rowID, data.dist/1000);
 	});
 }
 
