@@ -118,6 +118,7 @@ function dropMapPin(name, latLng) {
 		animation: google.maps.Animation.DROP
 	});
 	pins.push(marker);
+	map.setCenter(latLng);
 }
 
 function undo() {
@@ -201,17 +202,29 @@ var fares = {
 	}
 };
 
+function Fare(mode, distance, cost, id) {
+	return {
+		'type': mode,
+		'distance': distance,
+		'fare': cost,
+		'rowID': id
+	};
+}
+
 function calculateFinalFare(from, to, rowID, distance) {
 	var sectionFare = 0;
 	if (from.type == to.type) {
 		sectionFare = fares[from.type].default;
-		if (distance == 0) {
+		if (distance == 0 || (from.id == to.id)) {
 			sectionFare = 0.0;
 		} else {
 			var keys = Object.keys(fares[from.type]);
 			delete keys[keys.indexOf('default')];
 			var i;
 			var best = 256;
+			if (constituentFares.length > 0 && constituentFares[constituentFares.length-1].type == from.type) {
+				distance += constituentFares[constituentFares.length-1].distance; // only calculate incremental cost
+			}
 			for (i = 0; i < keys.length; i++) {
 				var key = keys[i];
 				if (key < best && distance < key) {
@@ -222,14 +235,17 @@ function calculateFinalFare(from, to, rowID, distance) {
 				sectionFare = fares[from.type][best];
 			}
 			if (mode !== 'adult') sectionFare /= 2;
-			//sectionFare = sectionFare.toFixed(2);
+			if (constituentFares.length > 0 && constituentFares[constituentFares.length - 1].type == from.type) {
+				sectionFare -= constituentFares[constituentFares.length-1].fare;
+			}
 		}
 		totalDistance += distance;
 		currentTotalFare += sectionFare;
-		constituentFares.push(sectionFare);
+		constituentFares.push(new Fare(from.type, distance, sectionFare, rowID));
 		sectionFare = sectionFare.toFixed(2);
 	} else {
-		sectionFare = '--';
+		return;
+		//sectionFare = '--';
 	}
 	var newEntry = document.getElementById(rowID);
 	newEntry.innerHTML = '<td>' + from.name + '</td><td>' + to.name + '</td><td> ' + distance.toFixed(2) + 'km</td><td>$' + sectionFare + '</td>';

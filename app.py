@@ -80,7 +80,7 @@ class TrainDistanceHandler(tornado.web.RequestHandler):
     def get(self, path):
         path = path.split('/')
         self.stops = path
-        print("Go get " + path)
+        print("Go get " + str(path))
         self.application.db.execute("SELECT id FROM stop_times WHERE name in (%s, %s) GROUP BY id HAVING COUNT(distinct name) = 2 LIMIT 1",
                                     (path[0], path[1]), callback=self._gotID)
     def _gotID(self, cursor, error):
@@ -98,7 +98,7 @@ class TrainDistanceHandler(tornado.web.RequestHandler):
         stopTimesID = res[0]
         self.application.db.execute("SELECT distance_travelled FROM stop_times WHERE id = %s AND name in (%s, %s)",
                                 (stopTimesID, self.stops[0], self.stops[1]), callback=self._finish)
-        #print("Got id " + stopTimesID)
+        #       print("Got id " + stopTimesID)
 
     def _finish(self, cursor, error):
         if cursor == None or cursor.rowcount == None or cursor.rowcount <= 1:
