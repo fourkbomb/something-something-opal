@@ -2,11 +2,11 @@
 import tornado.ioloop
 import tornado.web
 import argparse
-import psycopg2
 import momoko
 import json
 
 #from distance_matrix import DistanceMatrix
+
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
@@ -31,16 +31,17 @@ class ListStopsHandler(tornado.web.RequestHandler):
         self.write(fixed)
         self.finish()
 
+
 class GetShapeHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def get(self, path):
         self.application.db.execute("SELECT lat,lng FROM shapes WHERE id = %s",
-            (path,), callback=self._done)
+                                    (path,), callback=self._done)
 
     def _done(self, cursor, error):
-        #self.set_header('Content-Type', 'application/json')
-        self.write({'data': list(cursor)})
+        self.write({'data': cursor.fetchall()})
         self.finish()
+
 
 class GetStopHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
@@ -68,45 +69,49 @@ class GetStopHandler(tornado.web.RequestHandler):
             elif len(stopId) == 5:
                 response['type'] = 'ferry'
             else:
-                response['type'] = 'bus' # bus + light rail are the same.
+                # no way to distinguish between bus and light rail?
+                response['type'] = 'bus'
             self.write(response)
         else:
             self.set_status(404)
             self.write({})
         self.finish()
 
+
 class TrainDistanceHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
-    def get(self, path):
-        path = path.split('/')
-        self.stops = path
-        print("Go get " + str(path))
-        self.application.db.execute("SELECT id FROM stop_times WHERE name in (%s, %s) GROUP BY id HAVING COUNT(distinct name) = 2 LIMIT 1",
-                                    (path[0], path[1]), callback=self._gotID)
+    def get(self, start, stop):
+        self.start = start
+        self.stop = stop
+        self.application.db.execute(
+            "SELECT id FROM stop_times WHERE name in (%s, %s) GROUP BY id"
+            " HAVING COUNT(distinct name) = 2 LIMIT 1",
+            (start, stop), callback=self._gotID)
+
     def _gotID(self, cursor, error):
-        if cursor == None:
-            self.write({})
-            self.finish()
-            return
-        if not self.stops:
-            raise Exception("y u no be legit")
         res = cursor.fetchone()
-        if res == None:
+        if not res:
+            self.set_status(404)
             self.write({})
             self.finish()
             return
+
         stopTimesID = res[0]
-        self.application.db.execute("SELECT distance_travelled FROM stop_times WHERE id = %s AND name in (%s, %s)",
-                                (stopTimesID, self.stops[0], self.stops[1]), callback=self._finish)
-        #       print("Got id " + stopTimesID)
+        self.application.db.execute(
+            "SELECT distance_travelled FROM stop_times WHERE id = %s AND name in (%s, %s)",
+            (stopTimesID, self.start, self.stop), callback=self._finish)
+        #print("Got id " + stopTimesID)
 
     def _finish(self, cursor, error):
-        if cursor == None or cursor.rowcount == None or cursor.rowcount <= 1:
+        if cursor.rowcount < 2:
+            self.set_status(404)
             self.write({})
             self.finish()
+            return
+
         d1 = cursor.fetchone()[0]
         d2 = cursor.fetchone()[0]
-        dist = abs(float(d1) - float(d2))
+        dist = abs(d1 - d2)
         self.write({'dist': dist})
         self.finish()
 
@@ -119,12 +124,12 @@ class KeyHandler(tornado.web.RequestHandler):
 
 app = tornado.web.Application([
     (r'/', IndexHandler),
-    (r'/api/distance/train/(.*)', TrainDistanceHandler),
-    (r'/api/stops/id/(.*)', GetStopHandler),
-    (r'/api/stops/(.*)', ListStopsHandler),
+    (r'/api/distance/train/(.+?)/(.+)', TrainDistanceHandler),
+    (r'/api/stops/id/(.+)', GetStopHandler),
+    (r'/api/stops/(.+)', ListStopsHandler),
     (r'/api/key', KeyHandler),
     #(r'/api/cost/opal/train', OpalTrainCostHandler),
-    (r'/api/shape/(.*)', GetShapeHandler),
+    (r'/api/shape/(.+)', GetShapeHandler),
 ], static_path='static')
 
 if __name__ == "__main__":
@@ -138,7 +143,7 @@ if __name__ == "__main__":
     try:
         with open(args.config) as f:
             config = json.load(f)
-    except:  # TODO: Specify exception to save from suciding self in future?
+    except Exception:  # TODO: Specify exception to save from future sudoku?
         raise Exception("Failed to load config file.")
 
     app.db = momoko.Pool(
