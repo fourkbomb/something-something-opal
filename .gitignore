@@ -3,3 +3,5 @@ stops.txt
 config.json
 static/lib/*
 db/*.txt
+__pycache__
+*.pyc

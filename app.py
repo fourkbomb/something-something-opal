@@ -4,6 +4,7 @@ import tornado.web
 import argparse
 import momoko
 import json
+from db.TrainRouteDijkstra import TrainRouteDijkstra # halp how2object
 
 #from distance_matrix import DistanceMatrix
 
@@ -68,10 +69,9 @@ class GetStopHandler(tornado.web.RequestHandler):
                 response['type'] = 'train'
             elif len(stopId) == 5:
                 response['type'] = 'ferry'
-            elif 'Light Rail' in response['name']:
+            elif response['name'].endswith('Light Rail'):
                 response['type'] = 'lrail'
             else:
-                # no way to distinguish between bus and light rail?
                 response['type'] = 'bus'
             self.write(response)
         else:
@@ -130,8 +130,8 @@ app = tornado.web.Application([
     (r'/api/stops/id/(.+)', GetStopHandler),
     (r'/api/stops/(.+)', ListStopsHandler),
     (r'/api/key', KeyHandler),
-    #(r'/api/cost/opal/train', OpalTrainCostHandler),
     (r'/api/shape/(.+)', GetShapeHandler),
+    (r'/api/route/(.+)', TrainRouteDijkstra),
 ], static_path='static')
 
 if __name__ == "__main__":
