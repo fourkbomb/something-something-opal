@@ -7,7 +7,7 @@ echo Done
 echo Initialising tables
 psql $DBNAME -c "CREATE TABLE stops (id text PRIMARY KEY, name text, lat decimal, long decimal, parent_station text, wheelchair_boarding numeric, platform_code text)" 2>/dev/null
 #psql $DBNAME -c "CREATE TABLE shapes (id text, lat text, long text, sequence text, distance text)" 2>/dev/null
-psql $DBNAME -c "CREATE TABLE stop_times (id text, arr text, dep text, stop text references stops(id), seq numeric, headsign text, pickup numeric, dropoff numeric, distance_travelled text)" 2>/dev/null
+psql $DBNAME -c "CREATE TABLE stop_times (id text, arr text, dep text, stop text references stops(id), seq int, headsign text, pickup numeric, dropoff numeric, distance_travelled text)" 2>/dev/null
 echo Done
 
 echo Dumping CSV file
