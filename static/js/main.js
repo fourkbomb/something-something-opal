@@ -202,12 +202,15 @@ var fares = {
 	}
 };
 
-function Fare(mode, distance, cost, id) {
+fares.lrail = fares.bus;
+
+function Fare(mode, distance, cost, id, modeNetCost) {
 	return {
 		'type': mode,
 		'distance': distance,
 		'fare': cost,
-		'rowID': id
+		'rowID': id,
+		'netFare': modeNetCost
 	};
 }
 
@@ -234,14 +237,16 @@ function calculateFinalFare(from, to, rowID, distance) {
 			if (best !== 256) {
 				sectionFare = fares[from.type][best];
 			}
+			var netFare = sectionFare;
 			if (mode !== 'adult') sectionFare /= 2;
 			if (constituentFares.length > 0 && constituentFares[constituentFares.length - 1].type == from.type) {
-				sectionFare -= constituentFares[constituentFares.length-1].fare;
+				sectionFare -= constituentFares[constituentFares.length-1].netFare;
+				distance -= constituentFares[constituentFares.length-1].distance;
 			}
 		}
 		totalDistance += distance;
 		currentTotalFare += sectionFare;
-		constituentFares.push(new Fare(from.type, distance, sectionFare, rowID));
+		constituentFares.push(new Fare(from.type, distance, sectionFare, rowID, netFare));
 		sectionFare = sectionFare.toFixed(2);
 	} else {
 		return;

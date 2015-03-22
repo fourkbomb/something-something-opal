@@ -68,6 +68,8 @@ class GetStopHandler(tornado.web.RequestHandler):
                 response['type'] = 'train'
             elif len(stopId) == 5:
                 response['type'] = 'ferry'
+            elif 'Light Rail' in response['name']:
+                response['type'] = 'lrail'
             else:
                 # no way to distinguish between bus and light rail?
                 response['type'] = 'bus'
