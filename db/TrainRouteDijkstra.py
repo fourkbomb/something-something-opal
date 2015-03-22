@@ -57,8 +57,7 @@ class TrainRouteDijkstra(tornado.web.RequestHandler):
             end = pred[end]
             path.append(end)        
         path.reverse()
-        return {'steps': path, 'distance': max(dist.values())}
+        return {'steps': path, 'dist': max(dist.values())}
 
-    def get(self, path):
-        path = path.split('/')
-        self.write(self._shortest_path(self.graph, path[0], path[1]))
+    def get(self, start, stop):
+        self.write(self._shortest_path(self.graph, start, stop))

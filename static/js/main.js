@@ -204,13 +204,14 @@ var fares = {
 
 fares.lrail = fares.bus;
 
-function Fare(mode, distance, cost, id, modeNetCost) {
+function Fare(mode, distance, cost, id, modeNetCost, modeNetDistance) {
 	return {
 		'type': mode,
 		'distance': distance,
 		'fare': cost,
 		'rowID': id,
-		'netFare': modeNetCost
+		'netFare': modeNetCost,
+		'netDistance': modeNetDistance
 	};
 }
 
@@ -238,6 +239,7 @@ function calculateFinalFare(from, to, rowID, distance) {
 				sectionFare = fares[from.type][best];
 			}
 			var netFare = sectionFare;
+			var netDistance = distance;
 			if (mode !== 'adult') sectionFare /= 2;
 			if (constituentFares.length > 0 && constituentFares[constituentFares.length - 1].type == from.type) {
 				sectionFare -= constituentFares[constituentFares.length-1].netFare;
@@ -246,7 +248,7 @@ function calculateFinalFare(from, to, rowID, distance) {
 		}
 		totalDistance += distance;
 		currentTotalFare += sectionFare;
-		constituentFares.push(new Fare(from.type, distance, sectionFare, rowID, netFare));
+		constituentFares.push(new Fare(from.type, distance, sectionFare, rowID, netFare, netDistance));
 		sectionFare = sectionFare.toFixed(2);
 	} else {
 		return;
